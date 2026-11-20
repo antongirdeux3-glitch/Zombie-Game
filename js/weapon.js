@@ -15,6 +15,7 @@ class Weapon {
         this.magazineSize = 30;
         this.ammo = 30;
         this.reserveAmmo = 120;
+        this.maxReserveAmmo = 300;
 
         // Firing
         this.fireRate = 8;
