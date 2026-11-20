@@ -456,18 +456,40 @@ class EnemyManager {
         this.ammoPickups = [];
 
         // =====================================
-        // SPAWNING SETTINGS
+        // WAVE SETTINGS
         // =====================================
-
-        this.spawnInterval = 4;
-
-        this.spawnTimer = 2;
 
         this.maxEnemies = 8;
 
         this.minSpawnDistance = 500;
-
         this.maxSpawnDistance = 850;
+
+        // Each wave defines the exact number of each zombie type.
+        this.waveDefinitions = [
+            { normal: 5,  fast: 0,  tank: 0 },
+            { normal: 6,  fast: 2,  tank: 0 },
+            { normal: 8,  fast: 3,  tank: 1 },
+            { normal: 9,  fast: 4,  tank: 2 },
+            { normal: 11, fast: 6,  tank: 3 },
+            { normal: 12, fast: 8,  tank: 4 },
+            { normal: 13, fast: 10, tank: 5 },
+            { normal: 14, fast: 12, tank: 6 },
+            { normal: 15, fast: 14, tank: 7 },
+            { normal: 16, fast: 16, tank: 8 }
+        ];
+
+        this.currentWave = 0;
+        this.waveState = "starting";
+        this.waveTimer = 0;
+        this.spawnTimer = 2;
+        this.spawnIntervalMin = 2;
+        this.spawnIntervalMax = 3;
+        this.intermissionDuration = 10;
+        this.spawnQueue = [];
+        this.waveSpawned = 0;
+
+        // Start the first wave when the game begins.
+        this.startWave(1);
 
         // =====================================
         // ENEMY TYPE PROBABILITIES
@@ -865,6 +887,141 @@ class EnemyManager {
 
 
     // =====================================
+    // WAVE MANAGEMENT
+    // =====================================
+
+    startWave(waveNumber) {
+
+        const definition = this.waveDefinitions[waveNumber - 1];
+        if (!definition) return;
+
+        this.currentWave = waveNumber;
+        this.waveState = "spawning";
+        this.waveTimer = 0;
+        this.waveSpawned = 0;
+        this.spawnQueue = [];
+
+        for (const [type, count] of Object.entries(definition)) {
+            for (let i = 0; i < count; i++) {
+                this.spawnQueue.push(type);
+            }
+        }
+
+        // Shuffle the queue so zombie types arrive in mixed groups.
+        for (let i = this.spawnQueue.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [this.spawnQueue[i], this.spawnQueue[j]] =
+                [this.spawnQueue[j], this.spawnQueue[i]];
+        }
+
+        this.spawnTimer = 2;
+
+        console.log(
+            `WAVE ${this.currentWave} STARTED: ${this.spawnQueue.length} ENEMIES`
+        );
+
+    }
+
+
+    getActiveEnemyCount() {
+
+        return this.enemies.filter(
+            enemy => enemy.active
+        ).length;
+
+    }
+
+
+    getEnemiesRemaining() {
+
+        return this.spawnQueue.length + this.getActiveEnemyCount();
+
+    }
+
+
+    updateWaves(dt) {
+
+        // Spawn enemies only while the current wave is active.
+        if (this.waveState === "spawning") {
+
+            if (this.spawnQueue.length > 0) {
+
+                this.spawnTimer -= dt;
+
+                if (
+                    this.spawnTimer <= 0 &&
+                    this.getActiveEnemyCount() < this.maxEnemies
+                ) {
+
+                    const type = this.spawnQueue.shift();
+                    const x = this.getSpawnPosition();
+
+                    this.addEnemy(x, type);
+                    this.waveSpawned++;
+
+                    // Vary the delay between 2 and 3 seconds.
+                    this.spawnTimer =
+                        this.spawnIntervalMin +
+                        Math.random() * (
+                            this.spawnIntervalMax -
+                            this.spawnIntervalMin
+                        );
+
+                }
+
+            } else if (this.getActiveEnemyCount() === 0) {
+
+                this.completeWave();
+
+            }
+
+            return;
+
+        }
+
+        // Wait ten seconds after clearing a wave.
+        if (this.waveState === "intermission") {
+
+            this.waveTimer = Math.max(
+                0,
+                this.waveTimer - dt
+            );
+
+            if (this.waveTimer <= 0) {
+
+                if (this.currentWave < this.waveDefinitions.length) {
+
+                    this.startWave(this.currentWave + 1);
+
+                } else {
+
+                    // The ten-wave campaign is complete.
+                    // The dedicated boss encounter will be added separately.
+                    this.waveState = "boss_pending";
+                    console.log("ALL 10 WAVES CLEARED. BOSS ENCOUNTER PENDING.");
+
+                }
+
+            }
+
+        }
+
+    }
+
+
+    completeWave() {
+
+        this.waveState = "intermission";
+        this.waveTimer = this.intermissionDuration;
+
+        console.log(
+            `WAVE ${this.currentWave} CLEARED. NEXT STAGE IN ${this.intermissionDuration} SECONDS.`
+        );
+
+    }
+
+
+    // =====================================
     // SPAWN ENEMY
     // =====================================
 
@@ -924,27 +1081,10 @@ class EnemyManager {
         this.updateDifficulty();
 
         // =====================================
-        // AUTOMATIC ENEMY SPAWNING
+        // WAVE SPAWNING AND INTERMISSION
         // =====================================
 
-        this.spawnTimer -= dt;
-
-        if (this.spawnTimer <= 0) {
-
-            const activeEnemies = this.enemies.filter(
-                enemy => enemy.active
-            ).length;
-
-            if (activeEnemies < this.maxEnemies) {
-
-                this.spawnEnemy();
-
-            }
-
-            // Reset spawning timer
-            this.spawnTimer = this.spawnInterval;
-
-        }
+        this.updateWaves(dt);
 
         // =====================================
         // UPDATE ENEMY MOVEMENT
