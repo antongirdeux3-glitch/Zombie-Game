@@ -154,6 +154,18 @@ class BulletManager {
 
             }
 
+            // Boss uses the same player bullet damage and collision rules.
+            const boss = this.game.bossManager?.boss;
+            if (
+                bullet.active &&
+                boss &&
+                boss.active &&
+                bullet.checkCollision(boss)
+            ) {
+                boss.takeDamage(bullet.damage);
+                bullet.active = false;
+            }
+
         }
 
         this.bullets = this.bullets.filter(
