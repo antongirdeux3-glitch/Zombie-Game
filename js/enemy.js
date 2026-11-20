@@ -484,7 +484,7 @@ class EnemyManager {
         this.spawnTimer = 2;
         this.spawnIntervalMin = 2;
         this.spawnIntervalMax = 3;
-        this.intermissionDuration = 10;
+        this.intermissionDuration = 5;
         this.spawnQueue = [];
         this.waveSpawned = 0;
 
