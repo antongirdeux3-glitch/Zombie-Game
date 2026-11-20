@@ -300,6 +300,14 @@ class Enemy {
 
             this.active = false;
 
+            // Every Tank Zombie drops one reserve-ammo magazine.
+            if (this.type === "tank") {
+                this.game.enemyManager.addAmmoPickup(
+                    this.x + this.width / 2,
+                    this.game.groundY
+                );
+            }
+
             // =====================================
             // REWARD PLAYER
             // =====================================
@@ -443,6 +451,9 @@ class EnemyManager {
         // =====================================
 
         this.enemies = [];
+
+        // Reserve-ammo magazines dropped by Tank Zombies.
+        this.ammoPickups = [];
 
         // =====================================
         // SPAWNING SETTINGS
@@ -962,6 +973,12 @@ class EnemyManager {
         }
 
         // =====================================
+        // COLLECT AMMO PICKUPS
+        // =====================================
+
+        this.updateAmmoPickups();
+
+        // =====================================
         // REMOVE DEAD ENEMIES
         // =====================================
 
@@ -973,14 +990,113 @@ class EnemyManager {
 
 
     // =====================================
-    // RENDER ENEMIES
+    // AMMO PICKUPS
+    // =====================================
+
+    addAmmoPickup(x, groundY) {
+
+        this.ammoPickups.push({
+            x,
+            y: groundY - 22,
+            width: 28,
+            height: 22,
+            amount: 30,
+            collected: false
+        });
+
+    }
+
+
+    updateAmmoPickups() {
+
+        const player = this.game.player;
+
+        if (!player || player.isDead) return;
+
+        const weapon = player.weaponSystem;
+        const reserveCap = weapon.maxReserveAmmo || 300;
+
+        for (const pickup of this.ammoPickups) {
+
+            if (pickup.collected) continue;
+
+            // Leave the pickup available while reserve ammo is full.
+            if (weapon.reserveAmmo >= reserveCap) continue;
+
+            const playerLeft = player.x - player.width / 2;
+            const playerRight = player.x + player.width / 2;
+            const pickupLeft = pickup.x - pickup.width / 2;
+            const pickupRight = pickup.x + pickup.width / 2;
+
+            const horizontalOverlap =
+                playerRight >= pickupLeft &&
+                playerLeft <= pickupRight;
+
+            const verticalOverlap =
+                player.y < pickup.y + pickup.height &&
+                player.y + player.height > pickup.y;
+
+            if (!horizontalOverlap || !verticalOverlap) continue;
+
+            weapon.reserveAmmo = Math.min(
+                reserveCap,
+                weapon.reserveAmmo + pickup.amount
+            );
+
+            pickup.collected = true;
+            player.syncWeaponStats();
+
+        }
+
+        this.ammoPickups = this.ammoPickups.filter(
+            pickup => !pickup.collected
+        );
+
+    }
+
+
+    // =====================================
+    // RENDER ENEMIES AND AMMO PICKUPS
     // =====================================
 
     render(ctx) {
 
         for (const enemy of this.enemies) {
-
             enemy.render(ctx);
+        }
+
+        // Placeholder magazine graphic.
+        for (const pickup of this.ammoPickups) {
+
+            ctx.save();
+
+            ctx.fillStyle = "#c49a35";
+            ctx.fillRect(
+                pickup.x - pickup.width / 2,
+                pickup.y,
+                pickup.width,
+                pickup.height
+            );
+
+            ctx.fillStyle = "#3b3020";
+            ctx.fillRect(
+                pickup.x - pickup.width / 2 + 4,
+                pickup.y + 3,
+                pickup.width - 8,
+                5
+            );
+
+            ctx.fillStyle = "#f4d36b";
+            ctx.fillRect(pickup.x - 7, pickup.y + 9, 3, 10);
+            ctx.fillRect(pickup.x - 1, pickup.y + 9, 3, 10);
+            ctx.fillRect(pickup.x + 5, pickup.y + 9, 3, 10);
+
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 14px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText("+30", pickup.x, pickup.y - 7);
+
+            ctx.restore();
 
         }
 
