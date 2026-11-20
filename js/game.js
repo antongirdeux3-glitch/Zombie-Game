@@ -71,6 +71,7 @@ class Game {
         // =====================================
         // ENEMY
         this.enemyManager = new EnemyManager(this);
+        this.bossManager = new BossManager(this);
         // =====================================
 
         // =====================================
@@ -273,6 +274,7 @@ class Game {
         // =====================================
 
         this.enemyManager.update(dt);
+        this.bossManager.update(dt);
 
         // =====================================
         // UPDATE CAMERA
@@ -337,6 +339,7 @@ class Game {
 
         //Enemy        
         this.enemyManager.render(ctx);
+        this.bossManager.render(ctx);
 
         // Player
         this.player.render(ctx);
@@ -363,7 +366,7 @@ class Game {
         }
 
 
-        if (this.state === "gameover") {
+        if (this.state === "gameover" || this.state === "victory") {
 
             ctx.save();
 
@@ -371,23 +374,23 @@ class Game {
             ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
             ctx.fillRect(0, 0, this.width, this.height);
 
-            // Game Over title
-            ctx.fillStyle = "#e53935";
+            // End-of-mission title and subtitle
+            const victory = this.state === "victory";
+            ctx.fillStyle = victory ? "#f0c34e" : "#e53935";
             ctx.font = "bold 64px Arial";
             ctx.textAlign = "center";
 
             ctx.fillText(
-                "GAME OVER",
+                victory ? "MISSION COMPLETE" : "GAME OVER",
                 this.width / 2,
                 this.height / 2 - 40
             );
 
-            // Subtitle
             ctx.fillStyle = "#ffffff";
             ctx.font = "24px Arial";
 
             ctx.fillText(
-                "YOU HAVE BEEN ELIMINATED",
+                victory ? "THE ABOMINATION HAS BEEN DEFEATED" : "YOU HAVE BEEN ELIMINATED",
                 this.width / 2,
                 this.height / 2 + 15
             );
@@ -424,7 +427,7 @@ class Game {
 
         this.canvas.addEventListener("click", (e) => {
 
-            if (this.state !== "gameover") return;
+            if (this.state !== "gameover" && this.state !== "victory") return;
 
             const rect = this.canvas.getBoundingClientRect();
 

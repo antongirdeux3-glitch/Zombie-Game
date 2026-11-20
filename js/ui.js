@@ -32,6 +32,42 @@ class UI {
         this.drawMissionInfo(ctx);
         this.drawXP(ctx);
         this.drawWaveInfo(ctx);
+        this.drawBossHealth(ctx);
+
+    }
+
+    // =====================================
+    // BOSS HEALTH BAR
+    // =====================================
+
+    drawBossHealth(ctx) {
+
+        const boss = this.game.bossManager.boss;
+        if (!boss || !boss.active) return;
+
+        const panelX = 390;
+        const panelY = 135;
+        const panelWidth = 500;
+
+        this.drawPanel(ctx, panelX, panelY, panelWidth, 58);
+
+        ctx.textAlign = "center";
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 17px Arial";
+        ctx.fillText(boss.name, 640, 157);
+
+        this.drawBar(
+            ctx,
+            panelX + 18,
+            panelY + 29,
+            panelWidth - 36,
+            17,
+            boss.health,
+            boss.maxHealth,
+            "#c62828"
+        );
+
+        ctx.textAlign = "left";
 
     }
 
@@ -327,6 +363,24 @@ class UI {
             ctx.font = "bold 18px Arial";
 
             ctx.fillText("BOSS ENCOUNTER NEXT", 915, 682);
+
+        } else if (enemies.waveState === "boss_active") {
+
+            ctx.fillText("FINAL ENCOUNTER", 915, 653);
+
+            ctx.fillStyle = "#e45b4f";
+            ctx.font = "bold 18px Arial";
+
+            ctx.fillText("DEFEAT THE ABOMINATION", 915, 682);
+
+        } else if (enemies.waveState === "boss_defeated") {
+
+            ctx.fillText("FINAL ENCOUNTER COMPLETE", 915, 653);
+
+            ctx.fillStyle = "#f0c34e";
+            ctx.font = "bold 18px Arial";
+
+            ctx.fillText("MISSION ACCOMPLISHED", 915, 682);
 
         }
 
