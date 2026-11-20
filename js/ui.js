@@ -31,6 +31,7 @@ class UI {
         this.drawWeaponPanel(ctx);
         this.drawMissionInfo(ctx);
         this.drawXP(ctx);
+        this.drawWaveInfo(ctx);
 
     }
 
@@ -269,6 +270,68 @@ class UI {
         ctx.textAlign = "left";
 
     }
+
+    // =====================================
+    // WAVE STATUS
+    // =====================================
+
+    drawWaveInfo(ctx) {
+
+        const enemies = this.game.enemyManager;
+
+        this.drawPanel(ctx, 900, 630, 360, 70);
+
+        ctx.textAlign = "left";
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 15px Arial";
+
+        if (enemies.waveState === "spawning") {
+
+            ctx.fillText(
+                `WAVE ${enemies.currentWave} / ${enemies.waveDefinitions.length}`,
+                915,
+                653
+            );
+
+            ctx.fillStyle = "#f0c34e";
+            ctx.font = "bold 18px Arial";
+
+            ctx.fillText(
+                `ENEMIES LEFT: ${enemies.getEnemiesRemaining()}`,
+                915,
+                682
+            );
+
+        } else if (enemies.waveState === "intermission") {
+
+            ctx.fillText(
+                `WAVE ${enemies.currentWave} CLEARED`,
+                915,
+                653
+            );
+
+            ctx.fillStyle = "#f0c34e";
+            ctx.font = "bold 18px Arial";
+
+            ctx.fillText(
+                `NEXT WAVE IN: ${Math.ceil(enemies.waveTimer)}s`,
+                915,
+                682
+            );
+
+        } else if (enemies.waveState === "boss_pending") {
+
+            ctx.fillText("ALL 10 WAVES COMPLETE", 915, 653);
+
+            ctx.fillStyle = "#e45b4f";
+            ctx.font = "bold 18px Arial";
+
+            ctx.fillText("BOSS ENCOUNTER NEXT", 915, 682);
+
+        }
+
+    }
+
 
     // =====================================
     // EXPERIENCE
